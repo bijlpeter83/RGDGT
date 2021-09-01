@@ -1,18 +1,18 @@
 Rscript for analysing and plotting GDGT results: TEX86 and BIT index
 
-This script uses iso- and brGDGT integration results to calculate isoGDGT-based indices and ratios. The script will calculate and run several bias-indicating indexes, identify outliers in your data based on these indices and eventually presents the SST results with overprinted samples removed. 
+This script uses iso- and brGDGT integration results to calculate isoGDGT-based indices and ratios. The script will calculate and run several bias-indicating indexes, identify outliers in your data based on these indices and eventually presents the SST results with overprinted samples removed.
 
-For this script to run smoothly, you should construct your excel input as follows: 
+For this script to run smoothly, you should construct your excel input as follows:
 1. Use the first sheet of your excel spreadsheet as your datasheet. It doesn't matter how many other sheets you have in that, as long as the leftmost contains your GDGT data.
 2. Name the columns at least by the following items (CAPsensitive, but not necessarily in this order): age; 1302; 1300; 1298; 1296; 1292; 1292'; 1050-tot; 1036-tot; 1022.
 3. the ####-tot are sums of the 5th and 6th methylated brGDGTs of that m/z, if you have separated those out. You should calculate these in excel.
-4. If you have not separated out the 5th and 6th methylated brGDGTs in the m/z 1050 and 1036, (e.g., because you used the single-column chromatography on HPLC), add your peak areas to 1050-tot, 1036-tot. 
+4. If you have not separated out the 5th and 6th methylated brGDGTs in the m/z 1050 and 1036, (e.g., because you used the single-column chromatography on HPLC), add your peak areas to 1050-tot, 1036-tot.
 5. When you have not analyzed certain elements in your entire data frame, add NA, or leave those cells blank. When you have analyzed it and it was not in there, add 0 for those components.
 6. the script below assumes you have ages for your samples. If you only have depths for your data, you should replace `age` in all code in this script with `depth`, and have the column in your dataframe read 'depth'.
 
 # Load up data and packages
-## Load all required packages 
-Make sure you have installed these packages first. 
+## Load all required packages
+Make sure you have installed these packages first.
 
 ```{r}
 library(caTools)
@@ -24,7 +24,7 @@ library(tidyverse)
 library(plotly)
 ```
 ## Load your data
-This opens your data. Enter the path to your file at the xxxx. 
+This opens your data. Enter the path to your file at the xxxx.
 your data will appear below. Check whether all is ok.
 
 
@@ -37,11 +37,11 @@ OGdata
 # Add fractional abundances, indices, and equations to your data frame
 Now you will have to calculate fractional abundances, indices, ratios and paleotemperatures from your data. The string of code below adds these as columns to your dataframe.
 ```{r}
-OGdata <- OGdata %>% 
+OGdata <- OGdata %>%
         mutate(
 # Sums of various GDGT groups
           `SUM.ISO` = `1302` + `1300` + `1298` + `1296` + `1292` + `1292'`,
-          `SUM.BR` = `1022` + `1036-tot` + `1050-tot`, 
+          `SUM.BR` = `1022` + `1036-tot` + `1050-tot`,
           `SUM.ALL` = SUM.ISO + SUM.BR,
 # Fractional abundances
           `F1302.ALL` = `1302` / SUM.ALL,
@@ -64,12 +64,12 @@ OGdata <- OGdata %>%
           `FR.TETR` = (`1022`) / SUM.BR,
           `FR.PEN` = (`1036-tot`) / SUM.BR,
           `FR.HEX` = (`1050-tot`) / SUM.BR,
-# The TEX86 index        
+# The TEX86 index
           `TEX86` = (`1298` + `1296` + `1292'`)/(`1300` + `1298` + `1296` + `1292'`),
 # GDGT2/3 (Taylor et al., 2013) AOM (Weijers et al., 2011), lake in situ production (Blaga et al., 2009), methanogenic (Zhang et al., 2011) and regio-isomer (O'Brien et al., 2017) indices and the RING index (Zhang et al., 2016)
-          `GDGT2/GDGT3` = `1298`/ `1296`, 
+          `GDGT2/GDGT3` = `1298`/ `1296`,
           `GDGT2/cren` = `1298` / `1292`,
-          `GDGT0/cren` = `1302` / `1292`, 
+          `GDGT0/cren` = `1302` / `1292`,
           `Methzhang` = (`1300` + `1298` + `1296`) / (`1300` + `1298` + `1296` + `1292` + `1292'`),
           `fcren` = `1292'` / (`1292'` + `1292`),
           `RING` = F1300.ISO + 2*F1298.ISO + 3*F1296.ISO + 4*F1292.ISO + 4*`F1292'.ISO`,
@@ -87,26 +87,26 @@ This shows the data with the new indices added as columns
 OGdata
 ```
 # Add cutoff criteria for overprints
- 
-If: 
-RING outside CAPDELRI curves, 
-GDGT2/GDGT3 > 5 OR, 
-GDGT2/cren > 0.2 OR, 
+
+If:
+RING outside CAPDELRI curves,
+GDGT2/GDGT3 > 5 OR,
+GDGT2/cren > 0.2 OR,
 GDGT0/cren > 2 OR,
-Methzhang > 0.3  
-TEX86 is overprinted by non-thermal signals, or nonpelagic isoGDGTs 
-BIT index values are a problematic outlier criterium, for the values are too ambiguous to serve as flag for potential overprints, and interpretation strongly depend on the depositional setting. In proximal marine settings, high BIT index values could indicate contributions from terrestrially-sourced isoGDGTs, but in offshore settings, not. We recommend to look whether the samples with high BIT also have anomalous RING index values, or other overprints.  
+Methzhang > 0.3
+TEX86 is overprinted by non-thermal signals, or nonpelagic isoGDGTs
+BIT index values are a problematic outlier criterium, for the values are too ambiguous to serve as flag for potential overprints, and interpretation strongly depend on the depositional setting. In proximal marine settings, high BIT index values could indicate contributions from terrestrially-sourced isoGDGTs, but in offshore settings, not. We recommend to look whether the samples with high BIT also have anomalous RING index values, or other overprints.
 
 The code below adds columns to your dataframe with a logical value (TRUE or FALSE) for each outlier rule. The final OUTLIER column is added with a logical value for whether any of the other oulier rule is true
 
 ```{r}
-# this adds 
-OGdata <- OGdata %>% 
+# this adds
+OGdata <- OGdata %>%
         mutate(
                 `outlierBIT` = BIT > 0.4,
                 `outlierfcren` = `fcren` > 0.25,
-                `outlierGDGT2/3` = `GDGT2/GDGT3` > 5, 
-                `outlierGDGT2/cren` = `GDGT2/cren` > 0.2, 
+                `outlierGDGT2/3` = `GDGT2/GDGT3` > 5,
+                `outlierGDGT2/cren` = `GDGT2/cren` > 0.2,
                 `outlierGDGT0/cren` = `GDGT0/cren` > 2,
                 `outlierMethzhang` = `Methzhang` > 0.3,
                 `outlierCAPRI` = CAPRI > 0.3,
@@ -120,15 +120,15 @@ OGdata
 # setting the plotting theme
 This sets a plotting theme, to make the plots look slightly nicer than the standard in GGplot. If you modify this theme, the changes will be consistenly applied to all figures
 ```{r}
-
 Theme1 <- theme(
                 panel.background = element_rect(fill = NA, color = "black"),
                 plot.background = element_rect(fill = NA),
                 panel.grid = element_blank()
                 )
+theme_set(Theme1)
 ```
 # plotting the data
-now for some plots! 
+now for some plots!
 
 ## Relative abundance of GDGTs
 First we select the data we want to plot, then we transform the data to long format, and plot the data as stacked area plot.
@@ -136,11 +136,11 @@ First we select the data we want to plot, then we transform the data to long for
 dat1 <- select(OGdata, age, `F1302.ALL`:`F1022.ALL`)
 dat1 <- pivot_longer(dat1, `F1302.ALL`:`F1022.ALL`, values_to = "fraction", names_to = "biomarker")
 
- ggplot(dat1)+
-      geom_area(mapping = aes(x = age, y = fraction, fill = biomarker))+
-      scale_fill_manual(values = c("#336633", "#009933", "#CCFFCC", "#000033", "#003366", "#003399", "#0033CC", "#3366FF", "#0099FF"))+
-   Theme1
- 
+ ggplot(dat1) +
+      geom_area(mapping = aes(x = age, y = fraction, fill = biomarker)) +
+      scale_fill_manual(values = c("#336633", "#009933", "#CCFFCC", "#000033", "#003366", "#003399", "#0033CC", "#3366FF", "#0099FF"))
+
+
  #removing the `#` in the command line below saves this figure as PDF in your RGDGT folder
  #ggsave("1. GDGTcomposition.pdf")
 ```
@@ -156,24 +156,24 @@ RITEX.L <-  function(TEX86) (-1.15*TEX86) + (3.66*TEX86^2) + 1.39
 
 ggplot() +
         geom_point(OGdata, mapping = aes(x = TEX86, y = RING, color = `age`, shape = `OUTLIERTEX`)) +
-        scale_shape_manual(values = c(16, 4)) + 
-        scale_color_gradientn(colours = rainbow(4), trans = 'reverse')+
-        geom_line(OGdata, mapping = aes(x = TEX86, y = RITEX.L(TEX86)), color = "grey") + 
-        geom_line(OGdata, mapping = aes(x = TEX86, y = RITEX.U(TEX86)), color = "grey")+
-        geom_line(OGdata, mapping = aes(x = TEX86, y = RITEX))+
-        scale_x_continuous(limits = c(0.35, 0.85), breaks = seq(0.3, 0.9, 0.1))+
-        scale_y_continuous(limits = c(0,3.5), breaks = seq(0, 3.5, 0.5))+
-        Theme1
+        scale_shape_manual(values = c(16, 4)) +
+        scale_color_gradientn(colours = rainbow(4), trans = 'reverse') +
+        geom_line(OGdata, mapping = aes(x = TEX86, y = RITEX.L(TEX86)), color = "grey") +
+        geom_line(OGdata, mapping = aes(x = TEX86, y = RITEX.U(TEX86)), color = "grey") +
+        geom_line(OGdata, mapping = aes(x = TEX86, y = RITEX)) +
+        scale_x_continuous(limits = c(0.35, 0.85), breaks = seq(0.3, 0.9, 0.1)) +
+        scale_y_continuous(limits = c(0,3.5), breaks = seq(0, 3.5, 0.5))
+
 
 #removing the `#` in the command line below saves this figure as PDF in your RGDGT folder
  #ggsave("2. RINGindex.pdf")
 ```
 # overprint indices and TEX86 index
-Now we will plot time series of the indices and ratios that signal non-thermal, non-pelagic contributions in the isoGDGT data.  
+Now we will plot time series of the indices and ratios that signal non-thermal, non-pelagic contributions in the isoGDGT data.
 Overprinted samples are indicated as red crosses.
-I hope you see very few red crosses! 
+I hope you see very few red crosses!
 
-The code below selects the necessary variables ("select"), Then, for each overprinting criterium, overprinted data is separated from non-overprinted data ("filter"). All these data subsets are converted to long format ("pivot_long"). The "good" and "overprinted" data are merged ("bind_rows"). Then we represent cutoff values in a separate dataset ("data.frame"). We set the order of the variables (facet_recode) and plot these in a vertical facetgrid. 
+The code below selects the necessary variables ("select"), Then, for each overprinting criterium, overprinted data is separated from non-overprinted data ("filter"). All these data subsets are converted to long format ("pivot_long"). The "good" and "overprinted" data are merged ("bind_rows"). Then we represent cutoff values in a separate dataset ("data.frame"). We set the order of the variables (facet_recode) and plot these in a vertical facetgrid.
 ```{r}
 dat2 <- select(OGdata, age, `outlierBIT`, `outlierGDGT2/3`, `outlierGDGT0/cren`, `outlierGDGT2/cren`, `outlierMethzhang`, outlierCAPRI, TEX86, fcren, BIT, `GDGT2/GDGT3`, `GDGT2/cren`, `GDGT0/cren`, `Methzhang`, CAPRI)
 
@@ -235,40 +235,39 @@ dat2.T$key_f = factor(dat2.T$key, levels = c("BIT", "Methzhang", "GDGT2/cren", "
 dat2.F$key_f = factor(dat2.F$key, levels = c("TEX86", "BIT", "fcren", "Methzhang", "GDGT2/cren", "GDGT2/GDGT3", "GDGT0/cren", "CAPRI"))
 
 dat2.T <- mutate(dat2.T, facet_label = fct_recode(
-        key_f, 
-        "b. BIT index (Hopmans et al., 2004)" = "BIT", 
-        "d. Methane index (Zhang et al., 2011)" = "Methzhang", 
-        "e. AOM ratio (Weijers et al., 2011)" = "GDGT2/cren", 
-        "f. GDGT2/3 (Taylor et al., 2013)" = "GDGT2/GDGT3", 
+        key_f,
+        "b. BIT index (Hopmans et al., 2004)" = "BIT",
+        "d. Methane index (Zhang et al., 2011)" = "Methzhang",
+        "e. AOM ratio (Weijers et al., 2011)" = "GDGT2/cren",
+        "f. GDGT2/3 (Taylor et al., 2013)" = "GDGT2/GDGT3",
         "g. Methanogenesis (Blaga et al., 2009)" = "GDGT0/cren",
         "h. CAPRI (Zhang et al., 2016)" = "CAPRI"
     ))
 
 dat2.F <- mutate(dat2.F, facet_label = fct_recode(
-        key_f, 
+        key_f,
         "a. TEX86 (Schouten et al., 2002)" = "TEX86",
         "c. fcren (O'Brien et al., 2017)" = "fcren",
-        "b. BIT index (Hopmans et al., 2004)" = "BIT", 
-        "d. Methane index (Zhang et al., 2011)" = "Methzhang", 
-        "e. AOM ratio (Weijers et al., 2011)" = "GDGT2/cren", 
-        "f. GDGT2/3 (Taylor et al., 2013)" = "GDGT2/GDGT3", 
+        "b. BIT index (Hopmans et al., 2004)" = "BIT",
+        "d. Methane index (Zhang et al., 2011)" = "Methzhang",
+        "e. AOM ratio (Weijers et al., 2011)" = "GDGT2/cren",
+        "f. GDGT2/3 (Taylor et al., 2013)" = "GDGT2/GDGT3",
         "g. Methanogenesis (Blaga et al., 2009)" = "GDGT0/cren",
         "h. CAPRI (Zhang et al., 2016)" = "CAPRI"
     ))
 
-ggplot()+
+ggplot() +
         geom_point(dat2.F, mapping = aes(x = age, y = value), size = 0.1) +
         geom_point(dat2.T, mapping = aes(x = age, y = value), size = 0.6, shape = 4, color = "red") +
-        geom_hline(dat2.a, mapping = aes(yintercept = value), colour = "red")+
-        geom_hline(dat2.b, mapping = aes(yintercept = value), colour = "blue")+
+        geom_hline(dat2.a, mapping = aes(yintercept = value), colour = "red") +
+        geom_hline(dat2.b, mapping = aes(yintercept = value), colour = "blue") +
         facet_grid(facet_label~., scales = "free") +
-        labs(x = "Age (Ma)", y = "index value")+
-        Theme1 + 
-        theme(strip.text.y = element_text(angle=0, size = 7, hjust = 0), 
+        labs(x = "Age (Ma)", y = "index value") +
+        theme(strip.text.y = element_text(angle=0, size = 7, hjust = 0),
               aspect.ratio = 0.3,
               plot.title = element_text(size = 7),
               axis.title = element_text(size = 7),
-              axis.text = element_text(size = 5)) 
+              axis.text = element_text(size = 5))
 
 #removing the `#` in the command line below saves this figure as PDF in your RGDGT folder
  #ggsave("3. IsoGDGToverprints.pdf")
@@ -283,18 +282,15 @@ dat3.Gr <- pivot_longer(dat3.G, cols = c(SSTLIN, SSTEXP), names_to= "Calibration
 dat3.Or <- pivot_longer(dat3.O, cols = c(SSTLIN, SSTEXP), names_to= "Calibration", values_to= "sea surface temperature")
 
 # then visualization
-ggplot()+
-        geom_line(dat3.Gr, mapping = aes(x = `age`, y = `sea surface temperature`, color = Calibration))+
-        geom_point(dat3.Gr, mapping = aes(x = `age`, y = `sea surface temperature`, color = Calibration, shape = Calibration))+
-        geom_point (dat3.Or, mapping = aes(x = `age`, y = `sea surface temperature`, color = Calibration), shape = 4)+
-        scale_color_manual(values = c("grey", "black"))+
-        scale_shape_manual(values = c(15, 16))+
-        Theme1+
+ggplot() +
+        geom_line(dat3.Gr, mapping = aes(x = `age`, y = `sea surface temperature`, color = Calibration)) +
+        geom_point(dat3.Gr, mapping = aes(x = `age`, y = `sea surface temperature`, color = Calibration, shape = Calibration)) +
+        geom_point (dat3.Or, mapping = aes(x = `age`, y = `sea surface temperature`, color = Calibration), shape = 4) +
+        scale_color_manual(values = c("grey", "black")) +
+        scale_shape_manual(values = c(15, 16)) +
         labs(x = "Age (Ma)", y = "Sea surface temperature (Celsius)")
 
 #removing the `#` in the command line below saves this figure as PDF in your RGDGT folder
  #ggsave("4. TEX86SST.pdf")
 
 ```
-
-

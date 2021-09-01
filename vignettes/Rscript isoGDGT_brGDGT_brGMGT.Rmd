@@ -1,17 +1,17 @@
 Rscript for analysing and plotting GDGT results: TEX86, BIT index and MBT'5me
 
-This script uses iso- and brGDGT integration results to calculate isoGDGT-based indices and ratios. The script will calculate and run several bias-indicating indexes, identify outliers in your data based on these indices and eventually presents the SST and MAAT results with overprinted samples removed. 
+This script uses iso- and brGDGT integration results to calculate isoGDGT-based indices and ratios. The script will calculate and run several bias-indicating indexes, identify outliers in your data based on these indices and eventually presents the SST and MAAT results with overprinted samples removed.
 
-For this script to run smoothly, you should construct your excel input as follows: 
+For this script to run smoothly, you should construct your excel input as follows:
 1. Use the first sheet of your excel spreadsheet as your datasheet. It doesn't matter how many other sheets you have in that, as long as the leftmost contains your GDGT data.
 2. Name the columns at least by the following items (CAPsensitive, but not necessarily in this order): age; 1302; 1300; 1298; 1296; 1292; 1292'; 1050-tot; 1036-tot; 1022.
 3. the ####-tot are sums of the 5th and 6th methylated brGDGTs of that m/z, if you have separated those out. You should calculate these in excel.
-4. If you have not separated out the 5th and 6th methylated brGDGTs in the m/z 1050 and 1036, (e.g., because you used the single-column chromatography on HPLC), add your peak areas to 1050-tot, 1036-tot. 
+4. If you have not separated out the 5th and 6th methylated brGDGTs in the m/z 1050 and 1036, (e.g., because you used the single-column chromatography on HPLC), add your peak areas to 1050-tot, 1036-tot.
 5. When you have not analyzed certain elements in your entire data frame, add NA, or leave those cells blank. When you have analyzed it and it was not in there, add 0 for those components.
 6. the script below assumes you have ages for your samples. If you only have depths for your data, you should replace `age` in all code in this script with `depth`, and have the column in your dataframe read 'depth'.
 
 # Load up data and packages
-## Load all required packages 
+## Load all required packages
 Make sure you have installed these packages first.
 ```{r}
 library(caTools)
@@ -25,7 +25,7 @@ library(ggpubr)
 ```
 ## Load your data
 
-This opens your data. Enter the path to your file at the xxxx. 
+This opens your data. Enter the path to your file at the xxxx.
 your data will appear below. Check whether all is ok.
 ```{r}
 OGdata <- read_excel("xxxx.xlsx")
@@ -44,11 +44,11 @@ paleobr
 # Add fractional abundances, indices, and equations to your data frame
 Now you will have to calculate fractional abundances, indices, ratios and paleotemperatures from your data. The string of code below adds these as columns to your dataframe. the long mutate below adds columns to the dataframe with these indices and ratios.
 ```{r}
-OGdata <- OGdata %>% 
+OGdata <- OGdata %>%
         mutate(
 # Sums of various GDGT groups
           `SUM.ISO` = `1302` + `1300` + `1298` + `1296` + `1292` + `1292'`,
-          `SUM.BR` = `1022` + `1020` + `1018` + `1036-tot` + `1034-tot` + `1032-tot` + `1050-tot`, 
+          `SUM.BR` = `1022` + `1020` + `1018` + `1036-tot` + `1034-tot` + `1032-tot` + `1050-tot`,
           `SUM.Hbr` = `H-1048` + `H-1034tot` + `H-1020a` + `H-1020b` + `H-1020c`,
           `SUM.ALL` = SUM.ISO + SUM.BR + SUM.Hbr,
 # Fractional abundances
@@ -81,12 +81,12 @@ OGdata <- OGdata %>%
           `FR.TETR` = (`1022` + `1020` + `1018`) / SUM.BR,
           `FR.PEN` = (`1036-tot` + `1034-tot` + `1032-tot`) / SUM.BR,
           `FR.HEX` = (`1050-tot`) / SUM.BR,
-# The TEX86 index        
+# The TEX86 index
           `TEX86` = (`1298` + `1296` + `1292'`)/(`1300` + `1298` + `1296` + `1292'`),
 # GDGT2/3 (Taylor et al., 2013) AOM (Weijers et al., 2011), lake in situ production (Blaga et al., 2009), methanogenic (Zhang et al., 2011) and regio-isomer (O'Brien et al., 2017) indices and the RING index (Zhang et al., 2016)
-          `GDGT2/GDGT3` = `1298`/ `1296`, 
+          `GDGT2/GDGT3` = `1298`/ `1296`,
           `GDGT2/cren` = `1298` / `1292`,
-          `GDGT0/cren` = `1302` / `1292`, 
+          `GDGT0/cren` = `1302` / `1292`,
           `Methzhang` = (`1300` + `1298` + `1296`) / (`1300` + `1298` + `1296` + `1292` + `1292'`),
           `fcren` = `1292'` / (`1292'` + `1292`),
           `RING` = F1300.ISO + 2*F1298.ISO + 3*F1296.ISO + 4*F1292.ISO + 4*`F1292'.ISO`,
@@ -116,7 +116,7 @@ OGdata <- OGdata %>%
           `MAATPEAT` = 52.18 * `MBT5ME` - 23.05,
           `PHPEAT` = 2.49 * CBTpeat + 8.07,
 #and some brGMGT stuff. Fractional abundances:
-          `FH1048.Hbr` = `H-1048` / `SUM.Hbr`,  
+          `FH1048.Hbr` = `H-1048` / `SUM.Hbr`,
           `FH1034a.Hbr` = `H-1034a` / `SUM.Hbr`,
           `FH1034b.Hbr` = `H-1034b` / `SUM.Hbr`,
           `FH1034c.Hbr` = `H-1034c` / `SUM.Hbr`,
@@ -124,9 +124,9 @@ OGdata <- OGdata %>%
           `FH1020a.Hbr` = `H-1020a` / `SUM.Hbr`,
           `FH1020b.Hbr` = `H-1020b` / `SUM.Hbr`,
           `FH1020c.Hbr` = `H-1020c` / `SUM.Hbr`,
-#%GMGTs. There are two types, one using all brGMGTs over all brGDGTs (Baxter et al., 2019):  
+#%GMGTs. There are two types, one using all brGMGTs over all brGDGTs (Baxter et al., 2019):
           `FHbr.BR` = SUM.Hbr / (SUM.Hbr + SUM.BR),
-#and one using specific brGMGTs and only the 5-methyl, acyclic brGDGTs (Naafs et al., 2018): 
+#and one using specific brGMGTs and only the 5-methyl, acyclic brGDGTs (Naafs et al., 2018):
           `FHbr.BR.N` = (`H-1020c`+`H-1034b`+`H-1048`) / (`H-1020c`+`H-1034b`+`H-1048` + `1022` + `1036-1` + `1050-1`),
 #Naafs et al., 2018 showed that the methylation of brGMGTs varies with temperature in peats as well. Again two types:
           `HMBT.ALL` = (`H-1020a` + `H-1020b` + `H-1020c`) / (`H-1020a` + `H-1020b` + `H-1020c` + `H-1034tot` + `H-1048`),
@@ -141,30 +141,30 @@ OGdata
 ```
 # Add cutoff criteria for overprints
 ## isoGDGTs
-If: 
-RING outside CAPDELRI curves, 
-GDGT2/GDGT3 > 5 OR, 
-GDGT2/cren > 0.2 OR, 
+If:
+RING outside CAPDELRI curves,
+GDGT2/GDGT3 > 5 OR,
+GDGT2/cren > 0.2 OR,
 GDGT0/cren > 2 OR,
-Methzhang > 0.3  
-TEX86 is overprinted by non-thermal signals, or nonpelagic isoGDGTs 
-BIT index values are a problematic outlier criterium, for the values are too ambiguous to serve as flag for potential overprints, and interpretation strongly depend on the depositional setting. In proximal marine settings, high BIT index values could indicate contributions from terrestrially-sourced isoGDGTs, but in offshore settings, not. We recommend to look whether the samples with high BIT also have anomalous RING index values, or other overprints.  
+Methzhang > 0.3
+TEX86 is overprinted by non-thermal signals, or nonpelagic isoGDGTs
+BIT index values are a problematic outlier criterium, for the values are too ambiguous to serve as flag for potential overprints, and interpretation strongly depend on the depositional setting. In proximal marine settings, high BIT index values could indicate contributions from terrestrially-sourced isoGDGTs, but in offshore settings, not. We recommend to look whether the samples with high BIT also have anomalous RING index values, or other overprints.
 
 The code below adds columns to your dataframe with a logical value (TRUE or FALSE) for each outlier rule. The final OUTLIER column is added with a logical value for whether any of the other oulier rule is true
 ```{r}
-OGdata <- OGdata %>% 
+OGdata <- OGdata %>%
         mutate(
                 `outlierBIT` = BIT > 0.4,
                 `outlierfcren` = `fcren` > 0.25,
-                `outlierGDGT2/3` = `GDGT2/GDGT3` > 5, 
-                `outlierGDGT2/cren` = `GDGT2/cren` > 0.2, 
+                `outlierGDGT2/3` = `GDGT2/GDGT3` > 5,
+                `outlierGDGT2/cren` = `GDGT2/cren` > 0.2,
                 `outlierGDGT0/cren` = `GDGT0/cren` > 2,
                 `outlierMethzhang` = `Methzhang` > 0.3,
                 `outlierCAPRI` = CAPRI > 0.3,
                 `OUTLIERTEX` = `outlierGDGT2/3` | `outlierGDGT0/cren` | `outlierMethzhang` | outlierCAPRI | outlierfcren
                 )
 ```
-## brGDGTs 
+## brGDGTs
 Outlier values for reconstruction of soil-based MAT. High IR values are generally suspicious for river-produced GDGTs (De Jonge et al., 2014), and high values of the number of rings is generally a measure for marine in-situ production (Sinninghe Damste 2016; Dearing Crampton-Flood et al., 2019).
 ```{r}
 OGdata <- OGdata %>%
@@ -181,26 +181,26 @@ OGdata
 # setting the plotting theme
 This sets a plotting theme, to make the plots look slightly nicer than the standard in GGplot. If you modify this theme, the changes will be consistenly applied to all figures
 ```{r}
-#This sets a plotting theme, to make the plots look slightly nicer than the standard in GGplot. if you modify this theme, the changes will be consistenly applied to all figures
 Theme1 <- ggplot2::theme(
                 panel.background = element_rect(fill = NA, color = "black"),
                 plot.background = element_rect(fill = NA),
                 panel.grid = element_blank()
                 )
+theme_set(Theme1)
 ```
 # plotting the data
-now for some plots! 
+now for some plots!
 
 ## Relative abundance of GDGTs
 First we select the data we want to plot, then we transform the data to long format, and plot the data as stacked area plot.
 ```{r}
 dat1 <- select(OGdata, age, `F1302.ALL`:`F1018.ALL`)
 dat1 <- pivot_longer(dat1, `F1302.ALL`:`F1018.ALL`, values_to = "fraction", names_to = "biomarker")
- ggplot(dat1)+
-      geom_area(mapping = aes(x = age, y = fraction, fill = biomarker))+
-      scale_fill_manual(values = c("#003300", "#336633", "#009933", "#66CC33", "#66FF00", "#CCFF99", "#CCFFCC", "#000033", "#003366", "#003399", "#0033CC", "#3366FF", "#0099FF"))+
-   Theme1
- 
+ ggplot(dat1) +
+      geom_area(mapping = aes(x = age, y = fraction, fill = biomarker)) +
+      scale_fill_manual(values = c("#003300", "#336633", "#009933", "#66CC33", "#66FF00", "#CCFF99", "#CCFFCC", "#000033", "#003366", "#003399", "#0033CC", "#3366FF", "#0099FF"))
+
+
  #removing the `#` in the command line below saves this figure as PDF in your RGDGT folder
  #ggsave("1. GDGTcomposition.pdf")
 ```
@@ -216,24 +216,24 @@ RITEX.L <-  function(TEX86) (-1.15*TEX86) + (3.66*TEX86^2) + 1.39
 
 ggplot() +
         geom_point(OGdata, mapping = aes(x = TEX86, y = RING, color = `age`, shape = `OUTLIERTEX`)) +
-        scale_shape_manual(values = c(16, 4)) + 
-        scale_color_gradientn(colours = rainbow(4), trans = 'reverse')+
-        geom_line(OGdata, mapping = aes(x = TEX86, y = RITEX.L(TEX86)), color = "grey") + 
-        geom_line(OGdata, mapping = aes(x = TEX86, y = RITEX.U(TEX86)), color = "grey")+
-        geom_line(OGdata, mapping = aes(x = TEX86, y = RITEX))+
-  scale_x_continuous(limits = c(0.35, 0.85), breaks = seq(0.3, 0.9, 0.1))+
-  scale_y_continuous(limits = c(0,3.5), breaks = seq(0, 3.5, 0.5))+
-        Theme1
+        scale_shape_manual(values = c(16, 4)) +
+        scale_color_gradientn(colours = rainbow(4), trans = 'reverse') +
+        geom_line(OGdata, mapping = aes(x = TEX86, y = RITEX.L(TEX86)), color = "grey") +
+        geom_line(OGdata, mapping = aes(x = TEX86, y = RITEX.U(TEX86)), color = "grey") +
+        geom_line(OGdata, mapping = aes(x = TEX86, y = RITEX)) +
+  scale_x_continuous(limits = c(0.35, 0.85), breaks = seq(0.3, 0.9, 0.1)) +
+  scale_y_continuous(limits = c(0,3.5), breaks = seq(0, 3.5, 0.5))
+
 
 #removing the `#` in the command line below saves this figure as PDF in your RGDGT folder
  #ggsave("2. RINGindex.pdf")
 ```
 # overprint indices and TEX86 index
-Now we will plot time series of the indices and ratios that signal non-thermal, non-pelagic contributions in the isoGDGT data.  
+Now we will plot time series of the indices and ratios that signal non-thermal, non-pelagic contributions in the isoGDGT data.
 Overprinted samples are indicated as red crosses.
-I hope you see very few red crosses! 
+I hope you see very few red crosses!
 
-The code below selects the necessary variables ("select"), Then, for each overprinting criterium, overprinted data is separated from non-overprinted data ("filter"). All these data subsets are converted to long format ("pivot_long"). The "good" and "overprinted" data are merged ("bind_rows"). Then we represent cutoff values in a separate dataset ("data.frame"). We set the order of the variables (facet_recode) and plot these in a vertical facetgrid. 
+The code below selects the necessary variables ("select"), Then, for each overprinting criterium, overprinted data is separated from non-overprinted data ("filter"). All these data subsets are converted to long format ("pivot_long"). The "good" and "overprinted" data are merged ("bind_rows"). Then we represent cutoff values in a separate dataset ("data.frame"). We set the order of the variables (facet_recode) and plot these in a vertical facetgrid.
 ```{r}
 dat2 <- select(OGdata, age, `outlierBIT`, `outlierGDGT2/3`, `outlierGDGT0/cren`, `outlierGDGT2/cren`, `outlierMethzhang`, outlierCAPRI, TEX86, fcren, BIT, `GDGT2/GDGT3`, `GDGT2/cren`, `GDGT0/cren`, `Methzhang`, CAPRI)
 
@@ -293,40 +293,39 @@ dat2.T$key_f = factor(dat2.T$key, levels = c("BIT", "Methzhang", "GDGT2/cren", "
 dat2.F$key_f = factor(dat2.F$key, levels = c("TEX86", "BIT", "fcren", "Methzhang", "GDGT2/cren", "GDGT2/GDGT3", "GDGT0/cren", "CAPRI"))
 
 dat2.T <- mutate(dat2.T, facet_label = fct_recode(
-        key_f, 
-        "b. BIT index (Hopmans et al., 2004)" = "BIT", 
-        "d. Methane index (Zhang et al., 2011)" = "Methzhang", 
-        "e. AOM ratio (Weijers et al., 2011)" = "GDGT2/cren", 
-        "f. GDGT2/3 (Taylor et al., 2013)" = "GDGT2/GDGT3", 
+        key_f,
+        "b. BIT index (Hopmans et al., 2004)" = "BIT",
+        "d. Methane index (Zhang et al., 2011)" = "Methzhang",
+        "e. AOM ratio (Weijers et al., 2011)" = "GDGT2/cren",
+        "f. GDGT2/3 (Taylor et al., 2013)" = "GDGT2/GDGT3",
         "g. Methanogenesis (Blaga et al., 2009)" = "GDGT0/cren",
         "h. CAPRI (Zhang et al., 2016)" = "CAPRI"
     ))
 
 dat2.F <- mutate(dat2.F, facet_label = fct_recode(
-        key_f, 
+        key_f,
         "a. TEX86 (Schouten et al., 2002)" = "TEX86",
         "c. fcren (O'Brien et al., 2017)" = "fcren",
-        "b. BIT index (Hopmans et al., 2004)" = "BIT", 
-        "d. Methane index (Zhang et al., 2011)" = "Methzhang", 
-        "e. AOM ratio (Weijers et al., 2011)" = "GDGT2/cren", 
-        "f. GDGT2/3 (Taylor et al., 2013)" = "GDGT2/GDGT3", 
+        "b. BIT index (Hopmans et al., 2004)" = "BIT",
+        "d. Methane index (Zhang et al., 2011)" = "Methzhang",
+        "e. AOM ratio (Weijers et al., 2011)" = "GDGT2/cren",
+        "f. GDGT2/3 (Taylor et al., 2013)" = "GDGT2/GDGT3",
         "g. Methanogenesis (Blaga et al., 2009)" = "GDGT0/cren",
         "h. CAPRI (Zhang et al., 2016)" = "CAPRI"
     ))
 
-ggplot()+
+ggplot() +
         geom_point(dat2.F, mapping = aes(x = age, y = value), size = 0.1) +
         geom_point(dat2.T, mapping = aes(x = age, y = value), size = 0.6, shape = 4, color = "red") +
-        geom_hline(dat2.a, mapping = aes(yintercept = value), colour = "red")+
-        geom_hline(dat2.b, mapping = aes(yintercept = value), colour = "blue")+
+        geom_hline(dat2.a, mapping = aes(yintercept = value), colour = "red") +
+        geom_hline(dat2.b, mapping = aes(yintercept = value), colour = "blue") +
         facet_grid(facet_label~., scales = "free") +
-        labs(x = "Age (Ma)", y = "index value")+
-        Theme1 + 
-        theme(strip.text.y = element_text(angle=0, size = 7, hjust = 0), 
+        labs(x = "Age (Ma)", y = "index value") +
+        theme(strip.text.y = element_text(angle=0, size = 7, hjust = 0),
               aspect.ratio = 0.3,
               plot.title = element_text(size = 7),
               axis.title = element_text(size = 7),
-              axis.text = element_text(size = 5)) 
+              axis.text = element_text(size = 5))
 
 #removing the `#` in the command line below saves this figure as PDF in your RGDGT folder
  #ggsave("3. IsoGDGToverprints.pdf")
@@ -340,13 +339,13 @@ dat3.O <- filter(dat3, OUTLIERTEX)
 dat3.Gr <- pivot_longer(dat3.G, SSTLIN, SSTEXP, names_to = "Calibration", values_to = "sea surface temperature")
 dat3.Or <- pivot_longer(dat3.O, SSTLIN, SSTEXP, names_to = "Calibration", values_to = "sea surface temperature")
 
-ggplot()+
-        geom_line(dat3.Gr, mapping = aes(x = `age`, y = `sea surface temperature`, color = Calibration))+
-        geom_point(dat3.Gr, mapping = aes(x = `age`, y = `sea surface temperature`, color = Calibration, shape = Calibration))+
-        geom_point (dat3.Or, mapping = aes(x = `age`, y = `sea surface temperature`, color = Calibration), shape = 4)+
-        scale_color_manual(values = c("grey", "black"))+
-        scale_shape_manual(values = c(15, 16))+
-        Theme1+
+ggplot() +
+        geom_line(dat3.Gr, mapping = aes(x = `age`, y = `sea surface temperature`, color = Calibration)) +
+        geom_point(dat3.Gr, mapping = aes(x = `age`, y = `sea surface temperature`, color = Calibration, shape = Calibration)) +
+        geom_point (dat3.Or, mapping = aes(x = `age`, y = `sea surface temperature`, color = Calibration), shape = 4) +
+        scale_color_manual(values = c("grey", "black")) +
+        scale_shape_manual(values = c(15, 16))
++
         labs(x = "Age (Ma)", y = "Sea surface temperature (Celsius)")
 
 #removing the `#` in the command line below saves this figure as PDF in your RGDGT folder
@@ -354,7 +353,7 @@ ggplot()+
 ```
 # investigate the brGDGTs
 ## xy plots of brGDGT indices
-You will compare the fractional abundance of brGDGTs in your samples to those in modern and paleosamples, from soil, peat river and marine sediments. 
+You will compare the fractional abundance of brGDGTs in your samples to those in modern and paleosamples, from soil, peat river and marine sediments.
 The code below selects the data from "SOILdata.csv, paleobr.csv and OGdata, combines these datasets and pltos them in a set of x-y plots.
 ```{r}
 dat5.SOIL <- select(SOILdata, location, substrate, type, NoRINGStetra, NoRINGSpenta, NoRINGSpenta5, NoRINGSpenta6, IRpenta, IRhexa)
@@ -365,50 +364,50 @@ dat5a <- bind_rows(dat5.SOIL, dat5.paleo)
 dat5a$location_8f = factor(dat5a$location, levels = c("Global soil", "Global peat", "Amazon", "Baltic", "Berau", "Portugal", "Svalbard", "Siberia", "ACEX", "Otway", "Harrell", "mid-waipara", "U1356", "Cobham", "Otaio", "India", "Schoeningen"))
 
 
-ggplot()+
-      geom_point(dat5a, mapping = aes(x = NoRINGStetra, y = NoRINGSpenta, color = substrate, shape = location_8f))+
-      scale_shape_manual(values = c(3, 4, 0, 1, 2, 5, 6, 7, 15, 16, 17, 18, 20, 15, 16, 17, 18))+
-      geom_point(dat5, mapping = aes(x = NoRINGStetra, y = NoRINGSpenta), color = "black", shape = 4)+
-      labs(x = "#Ringstetra", y = "#Ringspenta")+
-      scale_x_continuous(limits = c(0,1), breaks = seq(0, 1, 0.2))+
-      scale_y_continuous(limits = c(0,1), breaks = seq(0, 1, 0.2))+
-      Theme1
+ggplot() +
+      geom_point(dat5a, mapping = aes(x = NoRINGStetra, y = NoRINGSpenta, color = substrate, shape = location_8f)) +
+      scale_shape_manual(values = c(3, 4, 0, 1, 2, 5, 6, 7, 15, 16, 17, 18, 20, 15, 16, 17, 18)) +
+      geom_point(dat5, mapping = aes(x = NoRINGStetra, y = NoRINGSpenta), color = "black", shape = 4) +
+      labs(x = "#Ringstetra", y = "#Ringspenta") +
+      scale_x_continuous(limits = c(0,1), breaks = seq(0, 1, 0.2)) +
+      scale_y_continuous(limits = c(0,1), breaks = seq(0, 1, 0.2))
+
 
 #removing the `#` in the command line below saves this figure as PDF in your RGDGT folder
  #ggsave("5a. brGDGTcross.pdf")
 
-ggplot()+
-    geom_point(dat5a, mapping = aes(x = NoRINGStetra, y = NoRINGSpenta5, color = substrate, shape = location_8f))+
-    scale_shape_manual(values = c(3, 4, 0, 1, 2, 5, 6, 7, 15, 16, 17, 18, 20, 15, 16, 17, 18))+
-    geom_point(dat5, mapping = aes(x = NoRINGStetra, y = NoRINGSpenta5), color = "black", shape = 4)+
-    labs(x = "#Ringstetra", y = "#Ringspenta5")+
-    scale_x_continuous(limits = c(0,1), breaks = seq(0, 1, 0.2))+
-    scale_y_continuous(limits = c(0,1), breaks = seq(0, 1, 0.2))+
-    Theme1
+ggplot() +
+    geom_point(dat5a, mapping = aes(x = NoRINGStetra, y = NoRINGSpenta5, color = substrate, shape = location_8f)) +
+    scale_shape_manual(values = c(3, 4, 0, 1, 2, 5, 6, 7, 15, 16, 17, 18, 20, 15, 16, 17, 18)) +
+    geom_point(dat5, mapping = aes(x = NoRINGStetra, y = NoRINGSpenta5), color = "black", shape = 4) +
+    labs(x = "#Ringstetra", y = "#Ringspenta5") +
+    scale_x_continuous(limits = c(0,1), breaks = seq(0, 1, 0.2)) +
+    scale_y_continuous(limits = c(0,1), breaks = seq(0, 1, 0.2))
+
 
 #removing the `#` in the command line below saves this figure as PDF in your RGDGT folder
  #ggsave("5b. brGDGTcross.pdf")
 
-ggplot()+
-    geom_point(dat5a, mapping = aes(x = NoRINGStetra, y = NoRINGSpenta6, color = substrate, shape = location_8f))+
-    scale_shape_manual(values = c(3, 4, 0, 1, 2, 5, 6, 7, 15, 16, 17, 18, 20, 15, 16, 17, 18))+
-    geom_point(dat5, mapping = aes(x = NoRINGStetra, y = NoRINGSpenta6), color = "black", shape = 4)+
-    labs(x = "#Ringstetra", y = "#Ringspenta6")+
-    scale_x_continuous(limits = c(0,1), breaks = seq(0, 1, 0.2))+
-    scale_y_continuous(limits = c(0,1), breaks = seq(0, 1, 0.2))+
-    Theme1
+ggplot() +
+    geom_point(dat5a, mapping = aes(x = NoRINGStetra, y = NoRINGSpenta6, color = substrate, shape = location_8f)) +
+    scale_shape_manual(values = c(3, 4, 0, 1, 2, 5, 6, 7, 15, 16, 17, 18, 20, 15, 16, 17, 18)) +
+    geom_point(dat5, mapping = aes(x = NoRINGStetra, y = NoRINGSpenta6), color = "black", shape = 4) +
+    labs(x = "#Ringstetra", y = "#Ringspenta6") +
+    scale_x_continuous(limits = c(0,1), breaks = seq(0, 1, 0.2)) +
+    scale_y_continuous(limits = c(0,1), breaks = seq(0, 1, 0.2))
+
 
 #removing the `#` in the command line below saves this figure as PDF in your RGDGT folder
  #ggsave("5c. brGDGTcross.pdf")
 
-ggplot()+
-    geom_point(dat5a, mapping = aes(x = IRpenta, y = IRhexa, color = substrate, shape = location_8f))+
-    scale_shape_manual(values = c(3, 4, 0, 1, 2, 5, 6, 7, 15, 16, 17, 18, 20, 15, 16, 17, 18))+
-    geom_point(dat5, mapping = aes(x = IRpenta, y = IRhexa), shape = 4)+
-    labs(x = "IRpenta", y = "IRhexa")+
-    scale_x_continuous(limits = c(0,1), breaks = seq(0, 1, 0.2))+
-    scale_y_continuous(limits = c(0,1), breaks = seq(0, 1, 0.2))+
-    Theme1
+ggplot() +
+    geom_point(dat5a, mapping = aes(x = IRpenta, y = IRhexa, color = substrate, shape = location_8f)) +
+    scale_shape_manual(values = c(3, 4, 0, 1, 2, 5, 6, 7, 15, 16, 17, 18, 20, 15, 16, 17, 18)) +
+    geom_point(dat5, mapping = aes(x = IRpenta, y = IRhexa), shape = 4) +
+    labs(x = "IRpenta", y = "IRhexa") +
+    scale_x_continuous(limits = c(0,1), breaks = seq(0, 1, 0.2)) +
+    scale_y_continuous(limits = c(0,1), breaks = seq(0, 1, 0.2))
+
 
 #removing the `#` in the command line below saves this figure as PDF in your RGDGT folder
  #ggsave("5d. brGDGTcross.pdf")
@@ -427,14 +426,13 @@ dat6.F <- filter(dat6.F, TYPE == "IR")
 dat6a <- data.frame("TYPE" = c("IR", "NoRINGStetra"), "value" = c(0.5, 0.75))
 
 
-ggplot()+
+ggplot() +
         geom_point(dat6.T, mapping = aes(x = age, y = index), size = 0.3) +
-        geom_hline(dat6a, mapping = aes(yintercept = value), color = "red")+
-        geom_point(dat6.F, mapping = aes(x = age, y = index), shape = 4, color = "red", size = 0.3)+
-        facet_grid(TYPE~., scales = "free")+
-        labs(x = "Age (Ma)", y = "index")+
-        Theme1 + 
-        theme(strip.text.y = element_text(angle=0, size = 7), 
+        geom_hline(dat6a, mapping = aes(yintercept = value), color = "red") +
+        geom_point(dat6.F, mapping = aes(x = age, y = index), shape = 4, color = "red", size = 0.3) +
+        facet_grid(TYPE~., scales = "free") +
+        labs(x = "Age (Ma)", y = "index") +
+        theme(strip.text.y = element_text(angle=0, size = 7),
               aspect.ratio = 0.3,
               plot.title = element_text(size = 7),
               axis.title = element_text(size = 7),
@@ -454,14 +452,13 @@ dat7.G <- filter(dat7.G, MBT5ME<1.0)
 dat7.O <- filter(dat7r, OUTLIERMBT)
 
 
-ggplot()+
+ggplot() +
         geom_point(dat7.G, mapping = aes(x = age, y = Temp, colour = TYPE), size = 0.4) +
         geom_line(dat7.G, mapping = aes(x = age, y = Temp, colour = TYPE)) +
-        geom_point(dat7.O, mapping = aes(x = age, y = Temp, colour = TYPE), shape = 4, size = 0.4)+
-        scale_color_manual(values = c("dark grey", "light grey", "black"))+
+        geom_point(dat7.O, mapping = aes(x = age, y = Temp, colour = TYPE), shape = 4, size = 0.4) +
+        scale_color_manual(values = c("dark grey", "light grey", "black")) +
         labs(x = "Age(Ma)", y = "Air temperature (celsius)", size = 7) +
-        Theme1+
-        theme(aspect.ratio = 0.7, 
+        theme(aspect.ratio = 0.7,
               legend.position = c(0.4, 0.3),
               legend.text = element_text(size=7),
               legend.title = element_text(size = 9)
@@ -482,14 +479,14 @@ dat8ma <- pivot_longer(dat8m, MAT5ME, names_to = "Type", values_to = "Temp")
 dat8 <- bind_rows(dat8sa, dat8ma)
 
 
-ggplot(dat8, mapping = aes(x = age, y = Temp))+
-        geom_point(aes(colour = Type), size  = 0.4)+
-        geom_line(aes(colour = Type))+
-        scale_color_manual(values = c("dark green", "blue"))+
-        labs(x = "Age (Ma)", y = "Temperature (Celsius)")+
-        coord_fixed(0.8)+
-        theme(legend.position = c(0.15, 0.8), legend.title = element_blank())+
-        Theme1
+ggplot(dat8, mapping = aes(x = age, y = Temp)) +
+        geom_point(aes(colour = Type), size  = 0.4) +
+        geom_line(aes(colour = Type)) +
+        scale_color_manual(values = c("dark green", "blue")) +
+        labs(x = "Age (Ma)", y = "Temperature (Celsius)") +
+        coord_fixed(0.8) +
+        theme(legend.position = c(0.15, 0.8), legend.title = element_blank())
+
 
 #removing the `#` in the command line below saves this figure as PDF in your RGDGT folder
  #ggsave("8. SST_MAAT.pdf")
@@ -508,10 +505,10 @@ dat9f <- bind_rows(dat9.1, dat9.3, dat9.5)
 
 ggplot() +
         geom_point(dat9f, mapping = aes(x = MAT5ME, y = SSTLIN, color = `age`)) +
-  geom_point(dat9.2, mapping = aes(x = MAT5ME, y = SSTLIN, color = age), shape = 15)+
-  geom_point(dat9.4, mapping = aes(x = MAT5ME, y = SSTLIN, color = age), shape = 17)+
-        scale_color_gradientn(colours = rainbow(4), trans = 'reverse')+
-        Theme1
+  geom_point(dat9.2, mapping = aes(x = MAT5ME, y = SSTLIN, color = age), shape = 15) +
+  geom_point(dat9.4, mapping = aes(x = MAT5ME, y = SSTLIN, color = age), shape = 17) +
+        scale_color_gradientn(colours = rainbow(4), trans = 'reverse')
+
 
 #removing the `#` in the command line below saves this figure as PDF in your RGDGT folder
  #ggsave("9. SST_MAATcross.pdf")
@@ -525,24 +522,24 @@ dat10 <- select(OGdata, MBT5ME, `MAT5ME`, `OUTLIERMBT`, `brGMGTI`, `outlierCAPRI
 dat10 <- filter(dat10, !MBT5ME==1)
 dat10r <- pivot_longer(dat10, `FH1048.Hbr`:`FH1020c.Hbr`, values_to = "FA", names_to = "HbrGDGT")
 
-ggplot()+
-    geom_point(dat10r, mapping = aes(x = MAT5ME, y = FA, shape = OUTLIERMBT, color = OUTLIERMBT), size = 0.2)+
-    scale_shape_manual(values = c(16,4))+
-    scale_color_manual(values = c("black", "red"))+
-    facet_grid(HbrGDGT~., scales = "free")+
-    Theme1+
+ggplot() +
+    geom_point(dat10r, mapping = aes(x = MAT5ME, y = FA, shape = OUTLIERMBT, color = OUTLIERMBT), size = 0.2) +
+    scale_shape_manual(values = c(16,4)) +
+    scale_color_manual(values = c("black", "red")) +
+    facet_grid(HbrGDGT~., scales = "free")
++
       theme(aspect.ratio = 0.5)
 
 #removing the `#` in the command line below saves this figure as PDF in your RGDGT folder
 #ggsave("10a. HbrGMGT_MAAT.pdf")
 
 
-ggplot()+
-    geom_point(dat10r, mapping = aes(x = SSTLIN, y = FA, shape = outlierCAPRI, color = outlierCAPRI), size = 0.2)+
-    scale_shape_manual(values = c(16,4))+
-    scale_color_manual(values = c("black", "red"))+
-    facet_grid(HbrGDGT~., scales = "free")+
-    Theme1+
+ggplot() +
+    geom_point(dat10r, mapping = aes(x = SSTLIN, y = FA, shape = outlierCAPRI, color = outlierCAPRI), size = 0.2) +
+    scale_shape_manual(values = c(16,4)) +
+    scale_color_manual(values = c("black", "red")) +
+    facet_grid(HbrGDGT~., scales = "free")
++
     theme(aspect.ratio = 0.5)
 
 #removing the `#` in the command line below saves this figure as PDF in your RGDGT folder
@@ -563,14 +560,13 @@ GOOD <- bind_rows(MATGOOD, SSTGOOD)
 BAD <- bind_rows(MATBAD, SSTBAD)
 
 
-ggplot()+
-  geom_point(GOOD, mapping = aes(x = `temp`, y = `brGMGTI`, color = BIT), size = 0.4)+
-  geom_smooth(GOOD, mapping=aes(x=temp, y=brGMGTI), method="lm")+
-  stat_cor(GOOD, mapping = aes(x=temp, y=brGMGTI))+
-  geom_point(BAD, mapping = aes(x = `temp`, y = `brGMGTI`), shape = 4, color = "grey", size = 0.4)+
-  scale_color_gradient(low = "light blue", high = "dark green")+
-  facet_grid(.~proxy, scales = "free")+
-  Theme1+
+ggplot() +
+  geom_point(GOOD, mapping = aes(x = `temp`, y = `brGMGTI`, color = BIT), size = 0.4) +
+  geom_smooth(GOOD, mapping=aes(x=temp, y=brGMGTI), method="lm") +
+  stat_cor(GOOD, mapping = aes(x=temp, y=brGMGTI)) +
+  geom_point(BAD, mapping = aes(x = `temp`, y = `brGMGTI`), shape = 4, color = "grey", size = 0.4) +
+  scale_color_gradient(low = "light blue", high = "dark green") +
+  facet_grid(.~proxy, scales = "free") +
   theme(aspect.ratio = 0.75)
 
   #removing the `#` in the command line below saves this figure as PDF in your RGDGT folder
@@ -587,11 +583,11 @@ HSSTBAD <- pivot_longer(HSSTBAD, SSTLIN:HMBT, values_to = "temp", names_to = "pr
 
 HSSTGOOD$key_f = factor(HSSTGOOD$proxy, levels = c("SSTLIN", "MAT5ME", "brGMGTI","HMBT.ALL", "HMBT", "FHbr.BR", "FHbr.BR.N"))
 HSSTGOOD <- mutate(HSSTGOOD, facet_label = fct_recode(
-        key_f, 
-        "SSTLIN (O'Brien et al., 2017)" = "SSTLIN", 
+        key_f,
+        "SSTLIN (O'Brien et al., 2017)" = "SSTLIN",
         "MAT5me (De Jonge et al., 2019)" = "MAT5ME",
-        "brGMGTI (Baxter et al., 2019)" = "brGMGTI", 
-        "%brGMGT (Naafs et al., 2018)" = "FHbr.BR.N", 
+        "brGMGTI (Baxter et al., 2019)" = "brGMGTI",
+        "%brGMGT (Naafs et al., 2018)" = "FHbr.BR.N",
         "%brGMGT (Baxter et al., 2019)" = "FHbr.BR",
         "HMBT (Naafs et al., 2018)" = "HMBT",
         "HMBTall (Sluijs et al., 2020)" = "HMBT.ALL"
@@ -599,26 +595,24 @@ HSSTGOOD <- mutate(HSSTGOOD, facet_label = fct_recode(
 
 HSSTBAD$key_f = factor(HSSTBAD$proxy, levels = c("SSTLIN", "MAT5ME", "brGMGTI","HMBT.ALL", "HMBT", "FHbr.BR", "FHbr.BR.N"))
 HSSTBAD <- mutate(HSSTBAD, facet_label = fct_recode(
-        key_f, 
-        "SSTLIN (O'Brien et al., 2017)" = "SSTLIN", 
+        key_f,
+        "SSTLIN (O'Brien et al., 2017)" = "SSTLIN",
         "MAT5me (De Jonge et al., 2019)" = "MAT5ME",
-        "brGMGTI (Baxter et al., 2019)" = "brGMGTI", 
-        "%brGMGT (Naafs et al., 2018)" = "FHbr.BR.N", 
+        "brGMGTI (Baxter et al., 2019)" = "brGMGTI",
+        "%brGMGT (Naafs et al., 2018)" = "FHbr.BR.N",
         "%brGMGT (Baxter et al., 2019)" = "FHbr.BR",
         "HMBT (Naafs et al., 2018)" = "HMBT",
         "HMBTall (Sluijs et al., 2020)" = "HMBT.ALL"
 ))
 
-ggplot()+
-  geom_point(HSSTGOOD, mapping = aes(x = `age`, y = `temp`), size = 0.4)+
-  geom_line(HSSTGOOD, mapping = aes(x = `age`, y = `temp`))+
-  geom_point(HSSTBAD, mapping = aes(x = `age`, y = `temp`), shape = 4, color = "grey", size = 0.4)+
-  facet_grid(facet_label~., scales = "free")+
-  theme(strip.text.y = element_text(angle=0, size = 7, hjust = 0))+
-  Theme1+theme(aspect.ratio = 0.25)
+ggplot() +
+  geom_point(HSSTGOOD, mapping = aes(x = `age`, y = `temp`), size = 0.4) +
+  geom_line(HSSTGOOD, mapping = aes(x = `age`, y = `temp`)) +
+  geom_point(HSSTBAD, mapping = aes(x = `age`, y = `temp`), shape = 4, color = "grey", size = 0.4) +
+  facet_grid(facet_label~., scales = "free") +
+  theme(strip.text.y = element_text(angle=0, size = 7, hjust = 0), aspect.ratio = 0.25)
 
 #removing the `#` in the command line below saves this figure as PDF in your RGDGT folder
 #ggsave("12. GMGT temp.pdf")
 
 ```
-
