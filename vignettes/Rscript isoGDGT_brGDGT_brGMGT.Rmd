@@ -416,30 +416,47 @@ ggplot() +
 ## time series of brGDGT indices
 The code below plots time series of BIT index, IR, #ringstetra and MBT5me, and these include cutoff lines above which a non-soil overprint can be expected in the MBT'5me data.
 ```{r}
-dat6 <- select(OGdata, age, MBT5ME, "BIT", "IR", "NoRINGStetra")
-dat6 <- mutate(dat6, "OUTLIERIR" = IR>0.5)
-dat6 <- pivot_longer(dat6, MBT5ME, "BIT", "IR", "NoRINGStetra", names_to = "TYPE", values_to = "index")
-dat6 <- filter(dat6, index>0)
-dat6.T <- filter(dat6, !OUTLIERIR)
-dat6.F <- filter(dat6, OUTLIERIR)
-dat6.F <- filter(dat6.F, TYPE == "IR")
-dat6a <- data.frame("TYPE" = c("IR", "NoRINGStetra"), "value" = c(0.5, 0.75))
+dat6a <- select(OGdata, c(age, MBT5ME, BIT))
+dat6a <- pivot_longer(dat6a, BIT, names_to = "TYPE", values_to = "index")
+dat6b <- select(OGdata, age, MBT5ME, outlierIR, outlierNoRINGS, IR, NoRINGStetra)
+dat6bIR <- select(dat6b, age, MBT5ME, outlierIR, IR)
+dat6bIR.G <- filter(dat6bIR, !outlierIR)
+dat6bIR.B <- filter(dat6bIR, outlierIR)
+dat6bIR.G <- pivot_longer(dat6bIR.G, cols=c(IR, MBT5ME), names_to = "TYPE", values_to = "index")
+dat6bIR.B <- pivot_longer(dat6bIR.B, cols=c(IR, MBT5ME), names_to = "TYPE", values_to = "index")
+dat6bIR.G <- select(dat6bIR.G, age, TYPE, index)
+dat6bIR.B <- select(dat6bIR.B, age, TYPE, index)
+dat6bNR <- select(dat6b, age, MBT5ME, NoRINGStetra, outlierNoRINGS, MBT5ME)
+dat6bNR.G <- filter(dat6bNR, !outlierNoRINGS)
+dat6bNR.B <- filter(dat6bNR, outlierNoRINGS)
+dat6bNR.G <- pivot_longer(dat6bNR.G, cols = c(NoRINGStetra, MBT5ME), names_to = "TYPE", values_to = "index")
+dat6bNR.B <- pivot_longer(dat6bNR.B, cols = c(NoRINGStetra, MBT5ME), names_to = "TYPE", values_to = "index")
+dat6bNR.G <- select(dat6bNR.G, age, TYPE, index)
+dat6bNR.B <- select(dat6bNR.B, age, TYPE, index)
+dat6.G <- bind_rows(dat6a, dat6bIR.G, dat6bNR.G)
+dat6.B <- bind_rows(dat6bIR.B, dat6bNR.B)
+dat6.G <- filter(dat6.G, index>0)
+dat6.B <- filter(dat6.B, index>0)
+dat6.G <- distinct(dat6.G)
+dat6.B <- distinct(dat6.B)
+dat6C <- data.frame("TYPE" = c("IR", "NoRINGStetra"), "value" = c(0.5, 0.75))
 
 
-ggplot() +
-        geom_point(dat6.T, mapping = aes(x = age, y = index), size = 0.3) +
-        geom_hline(dat6a, mapping = aes(yintercept = value), color = "red") +
-        geom_point(dat6.F, mapping = aes(x = age, y = index), shape = 4, color = "red", size = 0.3) +
-        facet_grid(TYPE~., scales = "free") +
-        labs(x = "Age (Ma)", y = "index") +
-        theme(strip.text.y = element_text(angle=0, size = 7),
+ggplot()+
+        geom_point(dat6.G, mapping = aes(x = age, y = index), size = 0.3) +
+        geom_hline(dat6C, mapping = aes(yintercept = value), color = "red")+
+        geom_point(dat6.B, mapping = aes(x = age, y = index), shape = 4, color = "red", size = 0.3)+
+        facet_grid(TYPE~., scales = "free")+
+        labs(x = "Age (Ma)", y = "index")+
+        Theme1 + 
+        theme(strip.text.y = element_text(angle=0, size = 7), 
               aspect.ratio = 0.3,
               plot.title = element_text(size = 7),
               axis.title = element_text(size = 7),
               axis.text = element_text(size = 7))
 
 #removing the `#` in the command line below saves this figure as PDF in your RGDGT folder
- #ggsave("6. brGDGTindices.pdf")
+ ggsave("6. brGDGTindices.pdf")
 ```
 # Plot MAT time series
 MAT reconstructions are plotted with overprinted data removed.
